@@ -1,3 +1,4 @@
+
 # Translation Pipeline Flowchart
 
 ```mermaid
@@ -13,8 +14,10 @@ graph TD
     E -->|ref2_filename_exists| G[Upload_Ref2<br>upload_to_do_ref2_content_session_id_ref2_filename]
     F -->|DigitalOcean_Spaces<br>app.py_get_upload_url| H[Get_ref1_file_url_ref1_file_size]
     G -->|DigitalOcean_Spaces<br>app.py_get_upload_url| I[Get_ref2_file_url_ref2_file_size]
-    E -->|No_refs| J[Set_ref1_ref2_to_None]
-    H --> J
+  
+    E--> |No_refs| NR[set_ref1_ref2=None]
+    NR--> K[Determine_Translation_Languages<br>translation_source_translation_target]
+    H --> J[Set ref1_ref2 to the file url]
     I --> J
 
     %% Database Logging
@@ -24,19 +27,18 @@ graph TD
 
     %% Reference Processing
     M --> N{Check_Reference_Documents}
-    N -->|Both_ref1_text_and_ref2_text| O[Process_Reference_Files]
+    N -->|Both_ref1_text_and_ref2_text| O[Process_Reference_Files                              ]
     O --> P{Ref1_is_PDF}
-    P -->|Yes| Q[Extract_ref1_text<br>get_pdf_ocr_text_ref1_content]
+    P -->|Yes| Q[Extract_ref1_text<br>get_pdf_ocr_text_ref1_content <br> Server ://ocr-pdf-458036510645.asia-southeast1]
     P -->|No| R[Extract_ref1_text<br>md_convert_BytesIO_ref1_content]
-    Q --> S
-    R --> S
-    S --> T{Ref2_is_PDF}
-    T -->|Yes| U[Extract_ref2_text<br>get_pdf_ocr_text_ref2_content]
+    Q --> T{Ref2 is pdf}
+    R --> T
+    
+    T -->|Yes| U[Extract_ref2_text<br>get_pdf_ocr_text_ref2_content <br> Server ://ocr-pdf-458036510645.asia-southeast1]
     T -->|No| V[Extract_ref2_text<br>md_convert_BytesIO_ref2_content]
-    U --> W
-    V --> W
-    W --> X[Log_Reference_Text_Lengths]
-    X --> Y[Call_Reference_Pairs_API<br>POST_reference_pairs_api_call_llm_to_create_reference_pairs_streaming]
+    U --> X[Log_Reference_Text_Lengths]
+    V --> X[Log_Reference_Text_Lengths]
+    X --> Y[Call_Reference_Pairs_API<br> ://ocr-pdf-7j4l.onrender.com/reference_pairs_api/call_llm_to_create_reference_pairs_streaming]
     Y -->|app.py_process_ocr| Z[Stream_Response_to_reference-beat_json<br>Extract_llm_pair_job_id_pair_string]
     Z -->|Error| AA[Write_Error_to_error_json]
     Z --> AB{Check_API_Response}
@@ -48,17 +50,17 @@ graph TD
     AC --> AE
     AA --> AE
     AD --> AE[Determine_Source_Target_Languages<br>English_or_Chinese]
-    AE --> AF[Call_Translation_API<br>POST_translation_api_translate_streaming]
+    AE --> AF[Call_Translation_API<br> ://ocr-pdf-7j4l.onrender.com/translation_api/translate_streaming]
     AF -->|translation_api.py_translate_document_streaming| AG[Download_Document<br>requests_get_original_docx_url]
     AG --> AH[Save_to_temp_downloads_filename_timestamp_docx]
-    AH --> AI[Call_translate_document_async]
+    AH --> AI[Call_translate_document_async ]
     AI --> AJ[Read_DOCX<br>Document_original_docx_path]
     AJ --> AK[Collect_Text<br>collect_all_docx_texts_doc]
     AK --> AL[Group_Paragraphs<br>group_paragraphs_by_word_count<br>Max_1000_words_or_40_paragraphs]
-    AL --> AM[Send_Batches_to_FastAPI<br>POST_api_translate]
+    AL --> AM[Send_Batches_to_FastAPI<br>POST <br>API_ENDPOINT = ://170.187.224.24:23477/api/translate<br> PROGRESS_ENDPOINT = ://170.187.224.24:23477/api/jobs ]
     AM -->|fastapi_server_translation_0522.py_translate_batch| AN[Generate_job_id<br>Initialize_active_translations]
     AN --> AO[Process_Batches_in_Parallel<br>process_with_semaphore]
-    AO --> AP[Call_Wang_Yi_Code_API<br>POST_v1_chat_glossary_agent]
+    AO --> AP[Call_Wang_Yi_Code_API<br>POST <br> ://146.190.101.128:1880/v1/chat/glossary_agent ]
     AP --> AQ[Construct_LLM_Prompt<br>system_prompt_user_input_llm_pair_result]
     AQ --> AR[Call_LLM<br>AsyncOpenAI_chat_completions_create]
     AR --> AS[Validate_Translation_Quality<br>validate_translation_quality]
